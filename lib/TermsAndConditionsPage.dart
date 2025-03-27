@@ -6,7 +6,7 @@ class TermsAndConditionsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Terms & Conditions"),
-        backgroundColor: Colors.deepOrangeAccent,
+        // backgroundColor: Colors.deepOrangeAccent,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20),
@@ -31,23 +31,7 @@ class TermsAndConditionsPage extends StatelessWidget {
             _buildSectionTitle("6. Changes to Terms"),
             _buildSectionContent("Chefio reserves the right to modify these Terms & Conditions at any time. Users will be notified of significant updates."),
 
-            SizedBox(height: 20),
-            Align(
-              alignment: Alignment.center,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrangeAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text("Accept & Continue", style: TextStyle(fontSize: 16, color: Colors.white)),
-              ),
-            ),
+
           ],
         ),
       ),
@@ -75,7 +59,7 @@ class TermsAndConditionsPage extends StatelessWidget {
         content,
         style: TextStyle(
           fontSize: 16,
-          color: Colors.black87,
+          // color: Colors.black87,
         ),
       ),
     );

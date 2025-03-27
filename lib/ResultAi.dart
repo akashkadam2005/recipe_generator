@@ -51,9 +51,16 @@ class _ResultPageState extends State<ResultPage> {
       String nutrition = nutritionRegExp.firstMatch(fullText)?.group(1)?.trim() ?? "No nutrition info found.";
 
       // Extract Calories
-      RegExp kcal = RegExp(r'Calories:\s*(\d+)');
-      // RegExp kcal = RegExp(r'Calories\s*\(kcal\):\s*(?:Approximately\s*)?(\d+)');
-      // String calaries = caloriesRegExp.firstMatch(nutrition)?.group(1) ?? "Unknown";
+      RegExp kcal = RegExp(r'Calories\s*\(kcal\):\s*(?:Approximately\s*)?(\d+)', caseSensitive: false);
+      String extractedCalories = kcal.firstMatch(nutrition)?.group(1) ?? "Unknown";
+
+      print("Extracted Calories: $extractedCalories"); // Should print only "350"
+
+      setState(() {
+        aiKcal = extractedCalories;  // Stores only the kcal number (e.g., "350")
+      });
+
+
 
       // Extract Preparation Time & Servings Count
       RegExp prepTimeRegExp = RegExp(r'Preparation Time:\s*(\d+)\s*Mins');
@@ -75,7 +82,6 @@ class _ResultPageState extends State<ResultPage> {
         aiIngredients = ingredients;
         aiInstructions = instructions;
         aiNutrition = nutrition;
-        // aiKcal = kcal;
         aiPrepTime = prepTime;
         aiServingsCount = servingsCount;
         isLoading = false;

@@ -7,7 +7,6 @@ class PrivacyPolicyPage extends StatelessWidget {
       appBar: AppBar(
         title: Text("Privacy Policy", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.deepOrange,
       ),
       body: Container(
         padding: EdgeInsets.all(16.0),
@@ -40,17 +39,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               _buildSectionTitle("Changes to Privacy Policy"),
               _buildSectionContent("We may update this policy from time to time. We encourage users to review it regularly."),
 
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepOrange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: Text("Accept & Continue", style: TextStyle(color: Colors.white)),
-                ),
-              ),
+
             ],
           ),
         ),
