@@ -65,6 +65,9 @@ class _ContactUsState extends State<ContactUs> {
     // final primaryColor = isDarkMode ? Colors.tealAccent : Colors.teal;
     final backgroundColor = isDarkMode ? Colors.black : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
+
 
     return Scaffold(
       appBar: AppBar(
@@ -74,16 +77,23 @@ class _ContactUsState extends State<ContactUs> {
       ),
       backgroundColor: backgroundColor,
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(10.0),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               children: [
-                Text(
-                  "We'd love to hear from you!",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,),
+              Container(
+              width: 170,
+              height: 230,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/images/ic_launcher.png"),
+                  fit: BoxFit.cover, // Ensures full coverage
                 ),
+              ),
+            ),
+
                 SizedBox(height: 16),
                 _buildTextField(_nameController, "Name", Icons.person, textColor),
                 _buildTextField(_emailController, "Email", Icons.email, textColor, keyboardType: TextInputType.emailAddress),
@@ -94,21 +104,15 @@ class _ContactUsState extends State<ContactUs> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _submitForm,
-            child: Text("Submit", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(
-              // backgroundColor: primaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: EdgeInsets.symmetric(vertical: 15),
-            ),
-          ),
-        ),
+      bottomNavigationBar: BottomAppBar(
+        shape: CircularNotchedRectangle(), // Circular Notch Shape
+        notchMargin: 8.0,
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {_submitForm();},
+        child: Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 

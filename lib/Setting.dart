@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:recipe_generator/PrivacyPolicyPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'ComtactUs.dart';
+import 'ContactUs.dart';
 import 'ProfileUpdate.dart';
 import 'Authantication/Login.dart';
 import 'Home.dart';

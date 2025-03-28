@@ -135,10 +135,11 @@ class GeminiService {
   /// ✅ Extract structured recipe data dynamically including kcal
   Future<Map<String, String>> extractRecipeData(String aiText, Map<String, String> selectedData) async {
     List<String> lines = aiText.split('\n');
+    String title = '';
     String ingredients = '';
     String instructions = '';
     String nutrition = '';
-    String kcal = 'Unknown';
+    String kcal = '';
     String protein = '';
     String carbs = '';
     String fat = '';
@@ -146,6 +147,10 @@ class GeminiService {
     bool isIngredients = false;
     bool isInstructions = false;
     bool isNutrition = false;
+
+    // Extract Title
+    RegExp titleRegExp = RegExp(r'Title:\s*(.*)');
+    title = titleRegExp.firstMatch(aiText)?.group(1)?.trim() ?? 'No title found';
 
     for (String line in lines) {
       if (line.toLowerCase().contains("ingredients")) {
@@ -190,6 +195,11 @@ class GeminiService {
     int? customerId = await getCustomerId();
     String customerIdString = customerId != null ? customerId.toString() : '1';
 
+    // 🔹 Dynamically generate the description using extracted title
+    String dynamicDescription = title.isNotEmpty && title != 'No title found'
+        ? title
+        : "Enjoy a delicious ${selectedData['Meal Type'] ?? 'meal'} with a perfect blend of flavors.";
+
     return {
       "generate_name": selectedData['Meal Type'] ?? 'Generated Recipe',
       "generate_customer_id": customerIdString,
@@ -200,7 +210,7 @@ class GeminiService {
       "generate_servings_count": selectedData['Servings Count'] ?? '1',
       "generate_desired_products": selectedData['Desired Products'] ?? 'No specific products selected',
       "generate_unwanted_products": selectedData['Unwanted Products'] ?? 'No specific products selected',
-      "generate_description": "Delicious meal prepared with selected ingredients.",
+      "generate_description": title,  // Now uses the extracted title
       "generate_ingredients": ingredients.trim().isNotEmpty ? ingredients.trim() : "No ingredients found.",
       "generate_instructions": instructions.trim().isNotEmpty ? instructions.trim() : "No instructions found.",
       "generate_nutritions": nutrition.trim().isNotEmpty ? nutrition.trim() : "No nutritional data found.",
