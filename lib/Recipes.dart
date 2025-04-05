@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'Home.dart';
 import 'RacipeView.dart';
 import 'Setting.dart';
+import 'main.dart';
 
 class RecipesScreen extends StatefulWidget {
   const RecipesScreen({super.key});
@@ -129,6 +130,12 @@ class _RecipesScreenState extends State<RecipesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context)=>MainScreen())); // ⬅️ This will take the user back to HomePage
+          },
+        ),
         title: const Text(
           'Your Saved Recipes',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
@@ -137,6 +144,7 @@ class _RecipesScreenState extends State<RecipesScreen> {
         elevation: 0,
         centerTitle: true,
       ),
+
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : recipes.isEmpty

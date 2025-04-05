@@ -6,11 +6,11 @@ class ApiHelper {
   static final ApiHelper _instance = ApiHelper._internal();
 
   // Base URL
-  final String baseUrl = 'http://192.168.14.172/chefio/api/';
+  final String baseUrl = 'http://192.168.118.172/chefio/api/';
 
   // Image base URL
 
-  final String imageBaseUrl = 'http://192.168.14.172/chefio/api/uploads/';
+  final String imageBaseUrl = 'http://192.168.118.172/chefio/api/uploads/';
 
   // Private constructor for singleton
   ApiHelper._internal();
@@ -41,6 +41,28 @@ class ApiHelper {
       url,
       headers: {'Content-Type': 'application/json'},
     );
+  }
+
+  // Multipart request method
+  Future<http.StreamedResponse> multipartRequest({
+    required String endpoint,
+    required Map<String, String> fields,
+    Map<String, String>? headers,
+    Map<String, String>? files, // key: form field name, value: file path
+  }) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final request = http.MultipartRequest('POST', url);
+
+    request.fields.addAll(fields);
+    if (headers != null) request.headers.addAll(headers);
+
+    if (files != null) {
+      for (var entry in files.entries) {
+        request.files.add(await http.MultipartFile.fromPath(entry.key, entry.value));
+      }
+    }
+
+    return await request.send(); // Use .stream.bytesToString() to read response later
   }
 
 

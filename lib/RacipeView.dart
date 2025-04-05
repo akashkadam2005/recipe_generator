@@ -1,23 +1,118 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
+import 'package:recipe_generator/Authantication/Authuser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class RecipeView extends StatelessWidget {
+class RecipeView extends StatefulWidget {
   final Map<String, dynamic> recipe;
 
   const RecipeView({super.key, required this.recipe});
 
   @override
+  State<RecipeView> createState() => _RecipeViewState();
+}
+
+class _RecipeViewState extends State<RecipeView> {
+  bool isInWishlist = false;
+  late final int customerId ; // Replace with logged-in customer ID
+
+
+  @override
+  void initState() {
+    super.initState();
+    checkWishlistStatus();
+    loadCustomerId();
+  }
+
+  Future<void> loadCustomerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    int? id = prefs.getInt('userId');
+
+    if (id != null) {
+      setState(() {
+        customerId = id;
+      });
+      checkWishlistStatus(); // Only check once ID is loaded
+    }
+  }
+
+
+  void checkWishlistStatus() async {
+    if (customerId == null) return;
+
+    final url = Uri.parse(
+      "${ApiHelper().httpGet("/wishlist/get.php?recipe_id=${widget.recipe['generate_id']}&customer_id=$customerId")}",
+    );
+
+    try {
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+
+      setState(() {
+        isInWishlist = data['exists'] == true;
+      });
+    } catch (e) {
+      print("Error checking wishlist: $e");
+    }
+  }
+
+  void toggleWishlist() async {
+    final recipeId = widget.recipe['generate_id'];
+    final url = Uri.parse(
+      ApiHelper().baseUrl +
+          (isInWishlist ? '/wishlist/delete.php' : '/wishlist/store.php'),
+    );
+
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "wishlist_genrate_resipe_id": recipeId,
+          "wishlist_customer_id": customerId,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (data['success'] != null) {
+        setState(() {
+          isInWishlist = !isInWishlist;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['success']),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(data['error'] ?? 'Something went wrong'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print("Wishlist toggle error: $e");
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4, // Description, Ingredients, Instructions, Nutrition
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            recipe['generate_name'] ?? 'Unknown Recipe',
+            widget.recipe['generate_name'] ?? 'Unknown Recipe',
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              // color: Colors.white,
               shadows: [
                 Shadow(
                   blurRadius: 5,
@@ -29,92 +124,99 @@ class RecipeView extends StatelessWidget {
           ),
           centerTitle: true,
           elevation: 4,
-          // backgroundColor: Colors.green.shade700, // Beautiful AppBar color
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, ),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.pop(context),
           ),
+          actions: [
+            IconButton(
+              icon: Icon(
+                isInWishlist ? Icons.favorite : Icons.favorite_border,
+                color: Colors.red,
+              ),
+              onPressed: toggleWishlist,
+            ),
+          ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
+        body: buildBody(context),
+      ),
+    );
+  }
+
+  Widget buildBody(BuildContext context) {
+    final recipe = widget.recipe;
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Stack(
             children: [
-              // Recipe Image with Title
-              Stack(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Container(
-                      width: double.infinity,
-                      height: 250,
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/food3.jpg'),
-                          fit: BoxFit.cover,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 10,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Recipe Info (Time, Serving, Calories)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _infoTile(Icons.access_time, recipe['generate_preparation_time'] ?? 'N/A'),
-                    _infoTile(Icons.group, recipe['generate_servings_count'] ?? 'N/A'),
-                    _infoTile(Icons.local_fire_department, recipe['generate_kcal']??'N/A'),
-                  ],
-                ),
-              ),
-
-              // TabBar
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-                child: TabBar(
-                  labelColor: Colors.green.shade700,
-                  unselectedLabelColor: Colors.black54,
-                  indicatorColor: Colors.green.shade700,
-                  indicatorWeight: 2,
-                  tabs: const [
-                    Tab(text: 'Description'),
-                    Tab(text: 'Ingredients'),
-                    Tab(text: 'Instructions'),
-                    Tab(text: 'Nutrition'),
-                  ],
-                ),
-              ),
-
-              // Scrollable TabBarView
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.6, // Adjust height dynamically
-                child: TabBarView(
-                  physics: const NeverScrollableScrollPhysics(), // Prevent nested scroll conflicts
-                  children: [
-                    _tabCard(recipe['generate_description'] ?? 'No description available.'),
-                    _tabCard(recipe['generate_ingredients'] ?? 'No ingredients listed.'),
-                    _tabCard(recipe['generate_instructions'] ?? 'No instructions provided.'),
-                    _tabCard(recipe['generate_nutritions'] ?? 'No nutritional info available.'),
-                  ],
+                padding: const EdgeInsets.all(10),
+                child: Container(
+                  width: double.infinity,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/food3.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        spreadRadius: 2,
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _infoTile(Icons.access_time, recipe['generate_preparation_time'] ?? 'N/A'),
+                _infoTile(Icons.group, recipe['generate_servings_count'] ?? 'N/A'),
+                _infoTile(Icons.local_fire_department, recipe['generate_kcal'] ?? 'N/A'),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+            child: TabBar(
+              labelColor: Colors.green.shade700,
+              unselectedLabelColor: Colors.black54,
+              indicatorColor: Colors.green.shade700,
+              indicatorWeight: 2,
+              tabs: const [
+                Tab(text: 'Description'),
+                Tab(text: 'Ingredients'),
+                Tab(text: 'Instructions'),
+                Tab(text: 'Nutrition'),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: MediaQuery.of(context).size.height * 0.6,
+            child: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _tabCard(recipe['generate_description'] ?? 'No description available.'),
+                _tabCard(recipe['generate_ingredients'] ?? 'No ingredients listed.'),
+                _tabCard(recipe['generate_instructions'] ?? 'No instructions provided.'),
+                _tabCard(recipe['generate_nutritions'] ?? 'No nutritional info available.'),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -144,7 +246,6 @@ class RecipeView extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: Colors.white,
-          // border: Border.all(color: Colors.green.shade400, width: 2),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:recipe_generator/Authantication/Authuser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 
@@ -88,45 +89,50 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
       return;
     }
 
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('http://192.168.0.100/chefio/api/customer/update.php'),
-    );
+    final fields = {
+      'customer_id': widget.customerId.toString(),
+      'customer_name': _nameController.text,
+      'customer_email': _emailController.text,
+      'customer_phone': _phoneController.text,
+      'customer_address': _addressController.text,
+      'customer_password': _passwordController.text,
+      'customer_status': 'Active',
+    };
 
-    request.fields['customer_id'] = widget.customerId.toString();
-    request.fields['customer_name'] = _nameController.text;
-    request.fields['customer_email'] = _emailController.text;
-    request.fields['customer_phone'] = _phoneController.text;
-    request.fields['customer_address'] = _addressController.text;
-    request.fields['customer_password'] = _passwordController.text;  // ❌ Remove encryption here
-    request.fields['customer_status'] = "Active";
-
-    debugPrint("📤 Sending Data: ${request.fields}"); // ✅ Prints data before sending
-
+    final files = <String, String>{};
     if (_image != null) {
-      debugPrint("📸 Sending Image: ${_image!.path}"); // ✅ Prints image path if selected
-      request.files.add(await http.MultipartFile.fromPath('customer_image', _image!.path));
+      debugPrint("📸 Sending Image: ${_image!.path}");
+      files['customer_image'] = _image!.path;
     }
 
     try {
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-
-      Fluttertoast.showToast(
-        msg: "Profile updated successfully!",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        webPosition: "center",
-        webBgColor: "#00FF00",
+      final response = await ApiHelper().multipartRequest(
+        endpoint: 'customer/update.php',
+        fields: fields,
+        files: files,
       );
-      // ✅ Prints server response
 
-      Future.delayed(Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
+      final responseData = await response.stream.bytesToString();
+      final jsonResponse = json.decode(responseData);
+
+      debugPrint("✅ Response: $jsonResponse");
+
+      if (response.statusCode == 200 && jsonResponse['success'] != null) {
+        Fluttertoast.showToast(
+          msg: jsonResponse['success'],
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
+
+        Future.delayed(Duration(seconds: 2), () {
+          Navigator.pop(context);
+        });
+      } else {
+        throw Exception(jsonResponse['message'] ?? 'Failed to update profile');
+      }
+
     } catch (e) {
       debugPrint("❌ Error updating profile: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -153,7 +159,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
                     backgroundImage: _image != null
                         ? FileImage(_image!)
                         : (_profileImageUrl != null && _profileImageUrl!.isNotEmpty
-                        ? NetworkImage("http://192.168.0.100/chefio/uploads/customers/$_profileImageUrl")
+                        ? NetworkImage("${ApiHelper().getImageUrl("/customers/$_profileImageUrl")}")
                         : AssetImage("assets/images/logologin.jpg")) as ImageProvider,
                   ),
                   Positioned(
