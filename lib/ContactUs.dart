@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
 
+import 'Authantication/Authuser.dart';
+
 class ContactUs extends StatefulWidget {
   @override
   _ContactUsState createState() => _ContactUsState();
@@ -18,40 +20,44 @@ class _ContactUsState extends State<ContactUs> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final url = Uri.parse("http://192.168.0.100/chefio/api/contactus/store.php");
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "contact_name": _nameController.text,
-        "contact_email": _emailController.text,
-        "contact_phone": _phoneController.text,
-        "contact_message": _messageController.text,
-      }),
-    );
-
     try {
+      final response = await ApiHelper().httpPost(
+        "contactus/store.php",  // ✅ Don't forget the `/`
+        {
+          "contact_name": _nameController.text,
+          "contact_email": _emailController.text,
+          "contact_phone": _phoneController.text,
+          "contact_message": _messageController.text,
+        },
+      );
+
       final responseData = jsonDecode(response.body);
-      String message = responseData['message'] ?? "Unknown error";
       bool success = response.statusCode == 200 && responseData['status'] == 'success';
 
-      Fluttertoast.showToast(
-        msg: "Message Send successfully!",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        webPosition: "center",
-        webBgColor: "#00FF00",
-      );
-      // ✅ Prints server response
+      if (success) {
+        Fluttertoast.showToast(
+          msg: "Message sent successfully!",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+        );
 
-      Future.delayed(Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pop(context);
+        });
+      } else {
+        Fluttertoast.showToast(
+          msg: responseData['message'] ?? "Failed to send message",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.BOTTOM,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Invalid response from server", style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.red,
         ),
