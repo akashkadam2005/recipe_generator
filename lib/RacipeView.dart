@@ -16,55 +16,55 @@ class RecipeView extends StatefulWidget {
 
 class _RecipeViewState extends State<RecipeView> {
   bool isInWishlist = false;
-  late final int customerId ; // Replace with logged-in customer ID
-
+  int? customerId;
 
   @override
   void initState() {
     super.initState();
-    checkWishlistStatus();
-    loadCustomerId();
+    loadCustomerId(); // Load customer ID from shared preferences
   }
 
   Future<void> loadCustomerId() async {
     final prefs = await SharedPreferences.getInstance();
-    int? id = prefs.getInt('userId');
-
+    final id = prefs.getInt('userId');
     if (id != null) {
       setState(() {
         customerId = id;
       });
-      checkWishlistStatus(); // Only check once ID is loaded
+      checkWishlistStatus(); // Check wishlist only after loading ID
     }
   }
-
 
   void checkWishlistStatus() async {
     if (customerId == null) return;
 
     final url = Uri.parse(
-      "${ApiHelper().httpGet("/wishlist/get.php?recipe_id=${widget.recipe['generate_id']}&customer_id=$customerId")}",
+      "${ApiHelper().baseUrl}/wishlist/index.php?recipe_id=${widget.recipe['generate_id']}&customer_id=$customerId",
     );
 
     try {
       final response = await http.get(url);
-      final data = jsonDecode(response.body);
-
-      setState(() {
-        isInWishlist = data['exists'] == true;
-      });
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          isInWishlist = data['exists'] == true;
+        });
+      } else {
+        print("Server error: ${response.statusCode}");
+      }
     } catch (e) {
       print("Error checking wishlist: $e");
     }
   }
 
   void toggleWishlist() async {
+    if (customerId == null) return;
+
     final recipeId = widget.recipe['generate_id'];
     final url = Uri.parse(
       ApiHelper().baseUrl +
           (isInWishlist ? '/wishlist/delete.php' : '/wishlist/store.php'),
     );
-
 
     try {
       final response = await http.post(

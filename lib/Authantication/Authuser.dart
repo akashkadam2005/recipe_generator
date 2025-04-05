@@ -28,6 +28,10 @@ class ApiHelper {
     );
   }
 
+  String getUrl(String endpoint) {
+    return "$baseUrl$endpoint";
+  }
+
   // HTTP GET method
   Future<http.Response> httpGet(String endpoint) async {
     final url = Uri.parse('$baseUrl$endpoint');

@@ -136,7 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildOptionTile(context, icon: Icons.help, text: "Contact Us ", onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context)=>ContactUs()));
             }),
-            _buildOptionTile(context, icon: Icons.help, text: "Favroites racipes ", onTap: () {
+            _buildOptionTile(context, icon: Icons.favorite, text: "Favroites racipes ", onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context)=>WishlistPage()));
             }),
             _buildOptionTile(context, icon: Icons.logout, text: "Logout", textColor: Colors.red, onTap: _showLogoutDialog),

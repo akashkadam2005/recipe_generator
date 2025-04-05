@@ -28,25 +28,32 @@ class _WishlistPageState extends State<WishlistPage> {
     customerId = prefs.getInt('userId');
 
     if (customerId == null) {
+      print("❌ Customer ID not found in SharedPreferences");
       setState(() => isLoading = false);
       return;
     }
 
-    final url = Uri.parse(
-      "${ApiHelper().httpGet('/wishlist/list.php?customer_id=$customerId')}",
-    );
+    final fullUrl = ApiHelper().getUrl('/wishlist/show.php?customer_id=$customerId');
+    final response = await http.get(Uri.parse(fullUrl));
+
+    final url = Uri.parse(fullUrl);
+    print("📡 API URL: $fullUrl");
 
     try {
       final response = await http.get(url);
-      final data = jsonDecode(response.body);
+      print("✅ Status Code: ${response.statusCode}");
+      print("🔍 Response Body: ${response.body}");
 
-      if (data['success'] == true) {
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['wishlist'] != null) {
         setState(() {
-          wishlistItems = data['wishlist'] ?? [];
+          wishlistItems = data['wishlist'];
         });
+      } else {
+        print("⚠️ No wishlist data found or format is incorrect.");
       }
     } catch (e) {
-      print("Error fetching wishlist: $e");
+      print("❌ Error fetching wishlist: $e");
     } finally {
       setState(() {
         isLoading = false;
@@ -68,14 +75,21 @@ class _WishlistPageState extends State<WishlistPage> {
       );
 
       final data = jsonDecode(response.body);
+      print("🗑 Remove Response: $data");
+
       if (data['success'] != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['success']), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text(data['success']),
+            backgroundColor: Colors.green,
+          ),
         );
-        fetchWishlist(); // Refresh after removing
+        fetchWishlist(); // Refresh
+      } else {
+        print("⚠️ Remove failed: $data");
       }
     } catch (e) {
-      print("Error removing item: $e");
+      print("❌ Error removing from wishlist: $e");
     }
   }
 
@@ -94,8 +108,11 @@ class _WishlistPageState extends State<WishlistPage> {
           ? const Center(child: CircularProgressIndicator())
           : wishlistItems.isEmpty
           ? const Center(
-          child: Text("💔 No items in your wishlist yet!",
-              style: TextStyle(fontSize: 18)))
+        child: Text(
+          "💔 No items in your wishlist yet!",
+          style: TextStyle(fontSize: 18),
+        ),
+      )
           : ListView.builder(
         itemCount: wishlistItems.length,
         padding: const EdgeInsets.all(12),
@@ -128,7 +145,7 @@ class _WishlistPageState extends State<WishlistPage> {
               radius: 35,
               backgroundImage: AssetImage('assets/images/food3.jpg'),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,6 +156,8 @@ class _WishlistPageState extends State<WishlistPage> {
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -149,25 +168,33 @@ class _WishlistPageState extends State<WishlistPage> {
                         "${item['generate_preparation_time'] ?? 'N/A'} min",
                         style: const TextStyle(color: Colors.black54),
                       ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.local_fire_department, size: 16, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.local_fire_department,
+                          size: 16, color: Colors.orange),
                       const SizedBox(width: 4),
+
+                    ],
+                  ),
+                  Row(
+                    children: [
                       Text(
                         "${item['generate_kcal'] ?? 'N/A'} kcal",
                         style: const TextStyle(color: Colors.black54),
                       ),
                     ],
-                  ),
+                  )
                 ],
               ),
             ),
             IconButton(
               icon: const Icon(Icons.favorite, color: Colors.redAccent),
-              onPressed: () => removeFromWishlist(item['generate_id'].toString()),
-            )
+              onPressed: () =>
+                  removeFromWishlist(item['generate_id'].toString()),
+            ),
           ],
         ),
       ),
     );
   }
+
 }
